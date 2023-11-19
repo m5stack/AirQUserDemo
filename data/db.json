@@ -1,0 +1,23 @@
+{
+    "config": {
+        "factory_state": true,
+        "wifi": {
+            "ssid": "",
+            "password": ""
+        },
+        "rtc": {
+            "sleep_interval": 20
+        },
+        "ntp": {
+            "server_0": "pool.ntp.org",
+            "server_1": "time.nist.gov",
+            "tz": "GMT0"
+        },
+        "ezdata2": {
+            "dev_token": ""
+        },
+        "buzzer": {
+            "mute": true
+        }
+    }
+}
