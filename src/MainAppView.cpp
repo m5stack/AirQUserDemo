@@ -714,8 +714,8 @@ void StatusView::updateSEN55(
 void StatusView::displayNetworkStatus(const char *title, const char *msg) {
     _stautsTitleCanvas1->clear(TFT_WHITE);
     _stautsMsgCanvas1->clear(TFT_WHITE);
-    _stautsTitleCanvas1->drawCenterString(title, _stautsTitleCanvas->width() / 2, 0, _statusTitleFont);
-    _stautsMsgCanvas1->drawCenterString(msg, _stautsMsgCanvas->width() / 2, 0, _statusMsgFont);
+    _stautsTitleCanvas1->drawCenterString(title, _stautsTitleCanvas1->width() / 2, 0, _statusTitleFont);
+    _stautsMsgCanvas1->drawCenterString(msg, _stautsMsgCanvas1->width() / 2, 0, _statusMsgFont);
 
     _updateImpl(_stautsTitleCanvas1, _statusTitleCanvasX, _statusTitleCanvasY);
     _updateImpl(_stautsMsgCanvas1, _statusMsgCanvasX, _statusMsgCanvasY);

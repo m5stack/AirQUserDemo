@@ -6,7 +6,7 @@
             "password": ""
         },
         "rtc": {
-            "sleep_interval": 20
+            "sleep_interval": 60
         },
         "ntp": {
             "server_0": "pool.ntp.org",

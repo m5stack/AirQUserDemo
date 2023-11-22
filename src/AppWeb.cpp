@@ -19,12 +19,14 @@ extern SensirionI2CScd4x scd4x;
 extern SensirionI2CSen5x sen5x;
 
 static void postWiFiConnect();
-static void postWiFiList();
+static void getWiFiStatus();
+static void getWiFiList();
 static void postEzDataConfig();
 static void getStatus();
 static void getInfo();
 static void getConfig();
 static void postConfig();
+static void postAPControl();
 static void webTask(void *);
 
 static bool getSCD40MeasurementResult(SensirionI2CScd4x& scd4x, uint16_t& co2, float& temperature, float& humidity);
@@ -37,12 +39,14 @@ void appWebServer(void) {
     // onServeStatic("/www");
 
     server.on("/api/v1/wifi_connect", HTTP_POST, postWiFiConnect);
-    server.on("/api/v1/wifi_list", HTTP_GET, postWiFiList);
+    server.on("/api/v1/wifi_status", HTTP_GET, getWiFiStatus);
+    server.on("/api/v1/wifi_list", HTTP_GET, getWiFiList);
     server.on("/api/v1/ezdata_config", HTTP_POST, postEzDataConfig);
     server.on("/api/v1/status", HTTP_GET, getStatus);
     server.on("/api/v1/info", HTTP_GET, getInfo);
     server.on("/api/v1/config", HTTP_GET, getConfig);
     server.on("/api/v1/config", HTTP_POST, postConfig);
+    server.on("/api/v1/ap_control", HTTP_POST, postAPControl);
     // called when the url is not defined here
     server.onNotFound([]() {
         server.send(404, "text/plain", "FileNotFound");
@@ -75,11 +79,11 @@ static void webTask(void *) {
 static void postWiFiConnect() {
     cJSON *reqObject = NULL;
     cJSON *wifiObject = NULL;
-    cJSON *rspObject = NULL;
     bool flag = false;
     char *str = NULL;
 
     String content = server.arg("plain");
+    log_d("POST /api/v1/wifi_connect content: '%s'", content.c_str());
     reqObject = cJSON_Parse(content.c_str());
     if (reqObject == NULL) {
         log_w("JSON parse error");
@@ -90,12 +94,12 @@ static void postWiFiConnect() {
     wifiObject = cJSON_GetObjectItem(reqObject, "wifi");
     if (wifiObject) {
         cJSON *ssidObject = cJSON_GetObjectItem(wifiObject, "ssid");
-        if (String(ssidObject->valuestring) != db.wifi.ssid) {
+        if (ssidObject != NULL) {
             db.wifi.ssid = ssidObject->valuestring;
             flag = true;
         }
         cJSON *pskObject = cJSON_GetObjectItem(wifiObject, "password");
-        if (String(pskObject->valuestring) != db.wifi.password) {
+        if (ssidObject != NULL) {
             db.wifi.password = pskObject->valuestring;
             flag = true;
         }
@@ -108,16 +112,19 @@ static void postWiFiConnect() {
         WiFi.disconnect();
         delay(200);
         WiFi.begin(db.wifi.ssid.c_str(), db.wifi.password.c_str());
+        log_i("WiFi connect ...");
+        db.isConfigState = true;
     }
 
-    int32_t timeout = 0;
-    while (WiFi.status() != WL_CONNECTED && timeout < 30000) {
-        timeout += 500;
-        delay(500);
-        Serial.print(".");
-    }
-    log_i("WiFi connected, IP address: ");
-    log_i("IP address: %s", WiFi.localIP().toString().c_str());
+    server.send(200, "application/json", content);
+    log_d("POST /api/v1/wifi_connect response: '%s'", content.c_str());
+    return;
+}
+
+
+static void getWiFiStatus() {
+    cJSON *rspObject = NULL;
+    char *str = NULL;
 
     rspObject = cJSON_CreateObject();
     if (rspObject == NULL) {
@@ -132,8 +139,10 @@ static void postWiFiConnect() {
     }
     cJSON_AddStringToObject(rspObject, "mac", mac.c_str());
     cJSON_AddStringToObject(rspObject, "ip", WiFi.localIP().toString().c_str());
+    cJSON_AddBoolToObject(rspObject, "psk_status", db.pskStatus);
 
     str = cJSON_Print(rspObject);
+    log_d("GET /api/v1/wifi_status response: '%s'", str);
     server.send(200, "application/json", str);
 
     free(str);
@@ -142,7 +151,7 @@ static void postWiFiConnect() {
 }
 
 
-static void postWiFiList() {
+static void getWiFiList() {
     cJSON *rspObject = NULL;
     cJSON *apListObject = NULL;
     int n = 0;
@@ -160,14 +169,15 @@ static void postWiFiList() {
 
     log_i("WiFi Scan start");
     n = WiFi.scanNetworks();
-    log_i("WiFi Scan done");
     for (int i = 0; i < n; ++i) {
         log_i("%s", WiFi.SSID(i).c_str());
         cJSON_AddItemToArray(apListObject, cJSON_CreateString(WiFi.SSID(i).c_str()));
     }
+    log_i("WiFi Scan done");
     WiFi.scanDelete();
     str = cJSON_Print(rspObject);
     server.send(200, "application/json", str);
+    log_d("GET /api/v1/wifi_list response: '%s'", str);
 OUT:
     free(str);
     cJSON_Delete(rspObject);
@@ -181,6 +191,7 @@ static void postEzDataConfig() {
     cJSON *rspObject = NULL;
 
     String content = server.arg("plain");
+    log_d("POST /api/v1/ezdata_config content: '%s'", server.arg("plain").c_str());
     reqObject = cJSON_Parse(content.c_str());
     if (reqObject == NULL) {
         log_w("JSON parse error");
@@ -196,6 +207,7 @@ static void postEzDataConfig() {
     }
 
     server.send(201, "application/json", server.arg("plain"));
+    log_d("POST /api/v1/ezdata_config response: '%s'", server.arg("plain").c_str());
 
     db.saveToFile();
 
@@ -268,6 +280,7 @@ static void getStatus() {
 
     str = cJSON_Print(rspObject);
     server.send(200, "application/json", str);
+    log_d("GET /api/v1/status response: '%s'", str);
 OUT:
     free(str);
     cJSON_Delete(rspObject);
@@ -355,6 +368,7 @@ static void getInfo() {
 
     str = cJSON_Print(rspObject);
     server.send(200, "application/json", str);
+    log_d("GET /api/v1/info response: '%s'", str);
 OUT:
     free(str);
     cJSON_Delete(rspObject);
@@ -364,26 +378,27 @@ OUT1:
 
 
 static void getConfig() {
-    log_d("getConfig");
     File file = FILESYSTEM.open("/db.json", "r");
     server.streamFile(file, "application/json");
+    log_d("GET /api/v1/config response: '/db.json'");
     file.close();
     return;
 }
 
 
 static void postConfig() {
-    log_d("postConfig");
+
     cJSON *reqObject = NULL;
     cJSON *configObject = NULL;
     cJSON *wifiObject = NULL;
+    cJSON *rtcObject = NULL;
     cJSON *ntpObject = NULL;
     cJSON *ezdataObject = NULL;
     cJSON *buzzerObject = NULL;
     bool flag = false;
 
     String content = server.arg("plain");
-    log_d("content: %s", content.c_str());
+    log_d("POST /api/v1/config content: '%s'", content.c_str());
     reqObject = cJSON_Parse(content.c_str());
     if (reqObject == NULL) {
         log_w("JSON parse error");
@@ -395,15 +410,21 @@ static void postConfig() {
     wifiObject = cJSON_GetObjectItem(configObject, "wifi");
     if (wifiObject) {
         cJSON *ssidObject = cJSON_GetObjectItem(wifiObject, "ssid");
-        if (String(ssidObject->valuestring) != db.wifi.ssid) {
+        if (String(ssidObject->valuestring) != db.wifi.ssid && db.wifi.ssid.length() > 0) {
             db.wifi.ssid = ssidObject->valuestring;
             flag = true;
         }
         cJSON *pskObject = cJSON_GetObjectItem(wifiObject, "password");
-        if (String(pskObject->valuestring) != db.wifi.password) {
+        if (db.wifi.ssid.length() > 0 && String(pskObject->valuestring) != db.wifi.password) {
             db.wifi.password = pskObject->valuestring;
             flag = true;
         }
+    }
+
+    rtcObject = cJSON_GetObjectItem(configObject, "rtc");
+    if (rtcObject) {
+        cJSON * sleepIntervalObject = cJSON_GetObjectItem(rtcObject, "sleep_interval");
+        db.rtc.sleepInterval = sleepIntervalObject->valueint;
     }
 
     ntpObject = cJSON_GetObjectItem(configObject, "ntp");
@@ -450,6 +471,7 @@ static void postConfig() {
     db.saveToFile();
 
     server.send(201, "application/json", server.arg("plain"));
+    log_d("POST /api/v1/config response: '%s'", content.c_str());
 
     if (flag || WiFi.isConnected() != true) {
         WiFi.disconnect();
@@ -458,6 +480,32 @@ static void postConfig() {
     }
 
     cJSON_Delete(reqObject);
+    return;
+}
+
+
+static void postAPControl() {
+    cJSON *rspObject = NULL;
+    char *str = NULL;
+
+    rspObject = cJSON_CreateObject();
+    if (rspObject == NULL) {
+        return;
+    }
+
+    bool status = WiFi.softAPdisconnect();
+
+    cJSON_AddBoolToObject(rspObject, "status", status);
+
+    str = cJSON_Print(rspObject);
+    server.send(200, "application/json", str);
+
+    log_d("POST /api/v1/ap_control response: '%s'", str);
+
+    delay(1000);
+
+    free(str);
+    cJSON_Delete(rspObject);
     return;
 }
 

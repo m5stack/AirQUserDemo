@@ -34,6 +34,10 @@ public:
     struct {
         bool onoff;
     } buzzer;
+
+    // 不需要保存到文件
+    bool isConfigState;
+    bool pskStatus = true;
 };
 
 
