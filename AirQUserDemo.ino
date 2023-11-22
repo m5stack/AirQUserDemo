@@ -15,7 +15,7 @@
 #include <cJSON.h>
 #include <Preferences.h>
 
-#include <EzData.hpp>
+#include "EzData.hpp"
 #include "config.h"
 #include "misc.h"
 #include "DataBase.hpp"
@@ -555,15 +555,12 @@ void ezdataApp(ButtonEvent_t *buttonEvent) {
 
 void settingApp(ButtonEvent_t *buttonEvent) {
     static bool refresh = true;
-    static SettingState_t settingState = E_SETTING_STATE_INIT;
-    static int64_t lastMillisecond = esp_timer_get_time() / 1000;
 
     if (
         buttonEvent->id == E_BUTTON_A
         && buttonEvent->type == E_BUTTON_CLICK_TYPE_SINGLE
     ) {
         runMode = E_RUN_MODE_MAIN;
-        settingState = E_SETTING_STATE_INIT;
         refresh = true;
         return;
     }
@@ -588,7 +585,6 @@ void settingApp(ButtonEvent_t *buttonEvent) {
         && buttonEvent->type == E_BUTTON_CLICK_TYPE_SINGLE
     ) {
         runMode = E_RUN_MODE_APSETTING;
-        settingState = E_SETTING_STATE_INIT;
         refresh = true;
         return;
     }

@@ -3,6 +3,9 @@
 ## Supported framework
 
 - platfromio
+- Arduino IDE
+
+    ![](./assets/arduino_config.png)
 
 ## Build
 

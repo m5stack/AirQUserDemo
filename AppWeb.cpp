@@ -80,7 +80,6 @@ static void postWiFiConnect() {
     cJSON *reqObject = NULL;
     cJSON *wifiObject = NULL;
     bool flag = false;
-    char *str = NULL;
 
     String content = server.arg("plain");
     log_d("POST /api/v1/wifi_connect content: '%s'", content.c_str());

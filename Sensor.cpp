@@ -91,7 +91,7 @@ bool Sensor::getSEN55MeasurementResult() {
 
 void Sensor::getBatteryVoltageRaw() {
     esp_adc_cal_characteristics_t adc_chars;
-    esp_adc_cal_value_t val_type = esp_adc_cal_characterize(
+    esp_adc_cal_characterize(
         ADC_UNIT_1,
         ADC_ATTEN_DB_11,
         ADC_WIDTH_BIT_12,
@@ -105,12 +105,12 @@ void Sensor::getBatteryVoltageRaw() {
 void Sensor::getTimeString() {
     I2C_BM8563_TimeTypeDef time;
     _bm8563.getTime(&time);
-    sprintf(this->time.time, "%02d:%02d", time.hours, time.minutes);
+    sprintf(this->time.time, "%d:%d", time.hours, time.minutes);
 }
 
 
 void Sensor::getDateString() {
     I2C_BM8563_DateTypeDef date;
     _bm8563.getDate(&date);
-    sprintf(this->time.date, "%04d-%02d-%02d", date.year, date.month, date.date);
+    sprintf(this->time.date, "%d-%d-%d", date.year, date.month, date.date);
 }

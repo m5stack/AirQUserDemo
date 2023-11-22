@@ -44,8 +44,8 @@ public:
     } battery;
 
     struct {
-        char time[6];
-        char date[11];
+        char time[10];
+        char date[17];
     } time;
 
 private:
