@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  @apply font-sans
+}
+
+th {
+  @apply font-semibold
+}
+
+.select {
+  line-height: inherit;
+  min-height: auto;
+  border: 1px solid #e5e7eb;
+}
+
+.select:focus {
+  outline: none;
+}
+
+.table tr {
+  @apply border-b-slate-300
+}
+
+.btn {
+  @apply bg-indigo-600 hover:bg-indigo-500 text-white
+}
+
+.iconfont {
+  font-size: 1.75rem;
+  color: #3885d7;
+}
+
+.iconfont-xl {
+  @apply text-3xl
+}
+
+.icon-center {
+  @apply flex items-center
+}
+
+.text-m-xl {
+  font-size: 1.45rem;
+}
+
+.text-nox {
+  font-size: 1.38rem;
+}
+
+.text-nox-xl {
+  font-size: 1.6rem;
+}
+
+.alert {
+  grid-auto-flow: column;
+  grid-template-columns: auto minmax(auto,1fr);
+  justify-items: start;
+  text-align: left;
+  color: #fff;
+}

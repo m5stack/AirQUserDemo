@@ -1,0 +1,79 @@
+{
+  "id": "4248425",
+  "name": "airq",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "37408531",
+      "name": "co2",
+      "font_class": "co2",
+      "unicode": "e611",
+      "unicode_decimal": 58897
+    },
+    {
+      "icon_id": "37407241",
+      "name": "PM10",
+      "font_class": "pm10",
+      "unicode": "e610",
+      "unicode_decimal": 58896
+    },
+    {
+      "icon_id": "37407170",
+      "name": "PM4.0",
+      "font_class": "pm4",
+      "unicode": "e60f",
+      "unicode_decimal": 58895
+    },
+    {
+      "icon_id": "37407141",
+      "name": "PM1.0",
+      "font_class": "pm1",
+      "unicode": "e60e",
+      "unicode_decimal": 58894
+    },
+    {
+      "icon_id": "27988002",
+      "name": "co2",
+      "font_class": "co21",
+      "unicode": "e6b1",
+      "unicode_decimal": 59057
+    },
+    {
+      "icon_id": "5848485",
+      "name": "tvoc",
+      "font_class": "tvoc",
+      "unicode": "e633",
+      "unicode_decimal": 58931
+    },
+    {
+      "icon_id": "25716506",
+      "name": "空气温度",
+      "font_class": "temp",
+      "unicode": "ea33",
+      "unicode_decimal": 59955
+    },
+    {
+      "icon_id": "25716508",
+      "name": "空气湿度",
+      "font_class": "humidity",
+      "unicode": "ea34",
+      "unicode_decimal": 59956
+    },
+    {
+      "icon_id": "25716517",
+      "name": "PM2.5",
+      "font_class": "pm25",
+      "unicode": "ea35",
+      "unicode_decimal": 59957
+    },
+    {
+      "icon_id": "34732469",
+      "name": "nox",
+      "font_class": "nox",
+      "unicode": "e6c7",
+      "unicode_decimal": 59079
+    }
+  ]
+}
