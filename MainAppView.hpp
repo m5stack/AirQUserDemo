@@ -29,6 +29,8 @@ public:
     );
     void updateNetworkStatus(const char *title, const char *msg);
     void displayNetworkStatus(const char *title, const char *msg);
+    void updateNickname(String &nickname);
+    void displayNickname(String &nickname);
     void disappear();
 
 private:
@@ -83,6 +85,12 @@ private:
     M5Canvas *_chartCanvas1;
     int32_t _chartCanvasX;
     int32_t _chartCanvasY;
+
+    // nickname
+    M5Canvas *_nicknameCanvas;
+    M5Canvas *_nicknameCanvas1;
+    int32_t _nicknameCanvasX;
+    int32_t _nicknameCanvasY;
 
     // sen55
     const lgfx::IFont* _sen55TitleFont = &fonts::FreeSansBold9pt7b;
@@ -150,4 +158,6 @@ private:
     void initLOGO();
     void initSEN55();
     void initStatus();
+    void splitLongString(String &text, int32_t maxWidth, const lgfx::IFont* font);
+    void setNicknameFont(String &text, int32_t maxWidth);
 };

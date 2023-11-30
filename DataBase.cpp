@@ -67,6 +67,8 @@ void DataBase::saveToFile() {
     cJSON_AddItemToObject(configObject, "buzzer", buzzerObject);
     cJSON_AddBoolToObject(buzzerObject, "mute", buzzer.onoff);
 
+    cJSON_AddStringToObject(configObject, "nickname", nickname.c_str());
+
     configfile = FILESYSTEM.open("/db.json", FILE_WRITE);
     str = cJSON_Print(rootObject);
     configfile.write((const uint8_t *)str, strlen(str));
@@ -100,6 +102,8 @@ void DataBase::dump() {
 
     log_d("  buzzer:");
     log_d("    onoff: %d", buzzer.onoff);
+
+    log_d("  nickname: %s", nickname.c_str());
 }
 
 
@@ -157,6 +161,11 @@ void DataBase::loadFromFile(void) {
         buzzer.onoff = true;
     } else {
         buzzer.onoff = false;
+    }
+
+    cJSON *nicknameObject = cJSON_GetObjectItem(configObject, "nickname");
+    if (nicknameObject) {
+        nickname = String(nicknameObject->valuestring);
     }
 
     cJSON_Delete(rootObject);

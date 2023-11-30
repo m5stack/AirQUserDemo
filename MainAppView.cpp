@@ -15,8 +15,8 @@ StatusView::~StatusView() {}
 void StatusView::begin() {
 
     _canvas->createSprite(_lcd->width(), _lcd->height());
-    _canvas->setBaseColor(TFT_WHITE);
-    _canvas->setTextColor(TFT_WHITE, TFT_BLACK);
+    _canvas->setBaseColor(TFT_BLACK);
+    _canvas->setTextColor(TFT_BLACK, TFT_WHITE);
     _canvas->fillSprite(TFT_WHITE);
     initLOGO();
     initTime();
@@ -325,14 +325,28 @@ void StatusView::initPower()
 
 void StatusView::initLOGO()
 {
-    int32_t cursorX = 2;
-    int32_t cursorY = 2 + 50 + 2 + 69 + 2 + 39 + 2;
+    _nicknameCanvasX = 2;
+    _nicknameCanvasY = 2 + 50 + 2 + 69 + 2 + 39 + 2;
 
-    _canvas->fillRect(cursorX, cursorY, 97, 32, TFT_BLACK);
-    cursorX = 45;
-    cursorY = cursorY + (32 - _canvas->fontHeight(&fonts::FreeSansBold12pt7b)) / 2 + 1 + 2;
-    _canvas->drawCenterString("AirQ", cursorX, cursorY, &fonts::FreeSansBold12pt7b);
-    _canvas->setTextColor(TFT_BLACK, TFT_WHITE);
+    _nicknameCanvas = new M5Canvas(_canvas);
+    _nicknameCanvas->createSprite(97, 32);
+    _nicknameCanvas->setBaseColor(TFT_BLACK);
+    _nicknameCanvas->setTextColor(TFT_WHITE, TFT_BLACK);
+ 
+    _nicknameCanvas->clear();
+    int32_t cursorX = 97 / 2;
+    int32_t cursorY = (32 - _nicknameCanvas->fontHeight(&fonts::efontCN_14)) / 2;
+    _nicknameCanvas->drawCenterString("AirQ", cursorX, cursorY, &fonts::efontCN_14);
+    _updateImpl(_nicknameCanvas, _nicknameCanvasX, _nicknameCanvasY);
+
+    _nicknameCanvas1 = new M5Canvas(_lcd);
+    _nicknameCanvas1->createSprite(97, 32);
+    _nicknameCanvas1->setBaseColor(TFT_BLACK);
+    _nicknameCanvas1->setTextColor(TFT_WHITE, TFT_BLACK);
+    _nicknameCanvas1->clear();
+    cursorX = 97 / 2;
+    cursorY = (32 - _nicknameCanvas1->fontHeight(&fonts::efontCN_14)) / 2;
+    _nicknameCanvas1->drawCenterString("AirQ", cursorX, cursorY, &fonts::efontCN_14);
 }
 
 
@@ -734,6 +748,67 @@ void StatusView::updateNetworkStatus(const char *title, const char *msg) {
 }
 
 
+void StatusView::displayNickname(String &nickname) {
+
+    const lgfx::IFont* fontTable[] = {&fonts::efontCN_16, &fonts::efontCN_14, &fonts::efontCN_12, &fonts::efontCN_10};
+    size_t i = 0;
+
+    for (i = 0; i < 4; i++) {
+        if (_nicknameCanvas1->textWidth(nickname, fontTable[i]) > 95) {
+            continue;
+        } else {
+            break;
+        }
+    }
+
+    log_d("%d", i);
+    if (i >= 4) {
+        splitLongString(nickname, 95, fontTable[3]);
+        i = 3;
+    }
+
+    log_d("%s", nickname.c_str());
+    _nicknameCanvas1->clear();
+    int32_t cursorX = 97 / 2;
+    int32_t cursorY = (32 - _canvas->fontHeight(fontTable[i])) / 2;
+    log_d("%s", nickname.c_str());
+    _nicknameCanvas1->drawCenterString(nickname, cursorX, cursorY, fontTable[i]);
+
+    _updateImpl(_nicknameCanvas1, _nicknameCanvasX, _nicknameCanvasY);
+    updateNickname(nickname);
+}
+
+
+void StatusView::updateNickname(String &nickname) {
+    const lgfx::IFont* fontTable[] = {&fonts::efontCN_16, &fonts::efontCN_14, &fonts::efontCN_12, &fonts::efontCN_10};
+    size_t i = 0;
+
+    for (i = 0; i < 4; i++) {
+        if (_nicknameCanvas->textWidth(nickname, fontTable[i]) > 95) {
+            continue;
+        } else {
+            break;
+        }
+    }
+
+    log_d("%d", i);
+    if (i >= 4) {
+        splitLongString(nickname, 95, fontTable[3]);
+        i = 3;
+    }
+
+    log_d("%s", nickname.c_str());
+    _nicknameCanvas->clear();
+    int32_t cursorX = 97 / 2;
+    int32_t cursorY = (32 - _nicknameCanvas->fontHeight(fontTable[i])) / 2;
+    log_d("%s", nickname.c_str());
+    _nicknameCanvas->drawCenterString(nickname, cursorX, cursorY, fontTable[i]);
+
+    _updateImpl(_nicknameCanvas, _nicknameCanvasX, _nicknameCanvasY);
+
+}
+
+
 void StatusView::load() {
     _lcd->clear();
     _lcd->waitDisplay();
@@ -754,4 +829,39 @@ void StatusView::disappear() {
 void StatusView::_updateImpl(M5Canvas *canvas, int32_t x, int32_t y)
 {
     canvas->pushSprite(x, y);
+}
+
+
+void StatusView::splitLongString(String &text, int32_t maxWidth, const lgfx::IFont* font) {
+    int32_t w = _lcd->textWidth(text, font);
+    int32_t start = 1;
+    int32_t end = 0;
+    if (w < maxWidth) {
+        return ;
+    }
+
+    w = _lcd->textWidth("...", font);
+    for (;;) {
+        int32_t ww = _lcd->textWidth(text.substring(0, end), font);
+        ww = _lcd->textWidth(text.substring(0, end), font);
+        if (ww > (maxWidth / 2 - w)) {
+            end -= 1;
+            break;
+        }
+        end += 1;
+    }
+
+    start = end;
+
+    for (;;) {
+        int32_t ww = _lcd->textWidth(text.substring(start, -1), font);
+        if (ww < (maxWidth / 2 - w)) {
+            start += 1;
+            break;
+        }
+        start += 1;
+    }
+
+    text = text.substring(0, end) + "..." + text.substring(start);
+    log_d("%s", text.c_str());
 }

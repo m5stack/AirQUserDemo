@@ -185,7 +185,7 @@ String mac;
 String apSSID;
 
 void listDirectory(fs::FS &fs, const char * dirname, uint8_t levels);
-
+void splitLongString(String &text, int32_t maxWidth, const lgfx::IFont* font);
 
 void setup() {
     Serial.begin(115200);
@@ -819,6 +819,7 @@ void networkStatusUpdateServiceTask() {
 
     NetworkStatusMsgEvent_t networkStatusMsgEvent;
     memset(&networkStatusMsgEvent, 0, sizeof(NetworkStatusMsgEvent_t));
+    static String nickname = "";
 
     if (xQueueReceive(networkStatusMsgEventQueue, &networkStatusMsgEvent, (TickType_t)10) == pdTRUE) {
         // if (runMode == E_RUN_MODE_MAIN) {
@@ -828,10 +829,19 @@ void networkStatusUpdateServiceTask() {
         //     );
         // } else {
             statusView.updateNetworkStatus(
-                networkStatusMsgEvent.title, 
+                networkStatusMsgEvent.title,
                 networkStatusMsgEvent.content
             );
         // }
+    }
+    if (runMode == E_RUN_MODE_MAIN && nickname != db.nickname) {
+        nickname = db.nickname;
+        if (nickname.length() == 0) {
+            nickname = "AirQ";
+        }
+        log_d("%s", db.nickname.c_str());
+        statusView.displayNickname(nickname);
+        nickname = db.nickname;
     }
 
 }
@@ -1049,13 +1059,22 @@ void onWiFiDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
     if (db.wifi.ssid.length() == 0) {
         memcpy(networkStatusMsgEvent.title, "WiFi", strlen("WiFi"));
         memcpy(networkStatusMsgEvent.content, "no set", strlen("no set"));
+        if (xQueueSendToBack(networkStatusMsgEventQueue, &networkStatusMsgEvent, (TickType_t)10) != pdPASS) {
+            log_w("networkStatusMsgEventQueue send Failed");
+        }
     } else {
         if (info.wifi_sta_disconnected.reason == 201) {
             memcpy(networkStatusMsgEvent.title, "WiFi", strlen("WiFi"));
             memcpy(networkStatusMsgEvent.content, "no wifi", strlen("no wifi"));
+            if (xQueueSendToBack(networkStatusMsgEventQueue, &networkStatusMsgEvent, (TickType_t)10) != pdPASS) {
+                log_w("networkStatusMsgEventQueue send Failed");
+            }
         } else if (info.wifi_sta_disconnected.reason == 15) {
             memcpy(networkStatusMsgEvent.title, "WiFi", strlen("WiFi"));
             memcpy(networkStatusMsgEvent.content, "pass ng", strlen("pass ng"));
+            if (xQueueSendToBack(networkStatusMsgEventQueue, &networkStatusMsgEvent, (TickType_t)10) != pdPASS) {
+                log_w("networkStatusMsgEventQueue send Failed");
+            }
             db.pskStatus = false;
         }
         if (
@@ -1070,10 +1089,6 @@ void onWiFiDisconnected(WiFiEvent_t event, WiFiEventInfo_t info) {
             }
         }
     }
-
-    if (xQueueSendToBack(networkStatusMsgEventQueue, &networkStatusMsgEvent, (TickType_t)10) != pdPASS) {
-        log_w("networkStatusMsgEventQueue send Failed");
-    }
 }
 
 
@@ -1083,6 +1098,7 @@ bool uploadSensorRawData(EzData &ezdataHanlder) {
     cJSON *sen55Object = NULL;
     cJSON *scd40Object = NULL;
     cJSON *rtcObject = NULL;
+    cJSON *profileObject = NULL;
     char *buf = NULL;
     String data;
 
@@ -1109,6 +1125,12 @@ bool uploadSensorRawData(EzData &ezdataHanlder) {
     }
     cJSON_AddItemToObject(rspObject, "rtc", rtcObject);
 
+    profileObject = cJSON_CreateObject();
+    if (profileObject == NULL) {
+        goto OUT;
+    }
+    cJSON_AddItemToObject(rspObject, "profile", profileObject);
+
     cJSON_AddNumberToObject(sen55Object, "pm1.0", sensor.sen55.massConcentrationPm1p0);
     cJSON_AddNumberToObject(sen55Object, "pm2.5", sensor.sen55.massConcentrationPm2p5);
     cJSON_AddNumberToObject(sen55Object, "pm4.0", sensor.sen55.massConcentrationPm4p0);
@@ -1123,6 +1145,7 @@ bool uploadSensorRawData(EzData &ezdataHanlder) {
     cJSON_AddNumberToObject(scd40Object, "temperature", sensor.scd40.temperature);
 
     cJSON_AddNumberToObject(rtcObject, "sleep_interval", db.rtc.sleepInterval);
+    cJSON_AddStringToObject(profileObject, "nickname", db.nickname.c_str());
 
     buf = cJSON_PrintUnformatted(rspObject);
     data = buf;
@@ -1260,10 +1283,11 @@ void splitLongString(String &text, int32_t maxWidth, const lgfx::IFont* font) {
         return ;
     }
 
+    w = lcd.textWidth("...", font);
     for (;;) {
         int32_t ww = lcd.textWidth(text.substring(0, end), font);
         ww = lcd.textWidth(text.substring(0, end), font);
-        if (ww > maxWidth / 2) {
+        if (ww > (maxWidth / 2 - w)) {
             end -= 1;
             break;
         }
@@ -1271,7 +1295,6 @@ void splitLongString(String &text, int32_t maxWidth, const lgfx::IFont* font) {
     }
 
     start = end;
-    w = lcd.textWidth("...", font);
     for (;;) {
         int32_t ww = lcd.textWidth(text.substring(start, -1), font);
         if (ww < (maxWidth / 2 - w)) {

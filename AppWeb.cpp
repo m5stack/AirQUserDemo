@@ -205,7 +205,7 @@ static void postEzDataConfig() {
         db.factoryState = false;
     }
 
-    server.send(201, "application/json", server.arg("plain"));
+    server.send(200, "application/json", server.arg("plain"));
     log_d("POST /api/v1/ezdata_config response: '%s'", server.arg("plain").c_str());
 
     db.saveToFile();
@@ -394,6 +394,7 @@ static void postConfig() {
     cJSON *ntpObject = NULL;
     cJSON *ezdataObject = NULL;
     cJSON *buzzerObject = NULL;
+    cJSON *nicknameObject = NULL;
     bool flag = false;
 
     String content = server.arg("plain");
@@ -465,11 +466,16 @@ static void postConfig() {
         }
     }
 
+    nicknameObject = cJSON_GetObjectItem(configObject, "nickname");
+    if (nicknameObject) {
+        db.nickname = nicknameObject->valuestring;
+    }
+
     cJSON_AddBoolToObject(reqObject, "factory_state", db.factoryState);
 
     db.saveToFile();
 
-    server.send(201, "application/json", server.arg("plain"));
+    server.send(200, "application/json", server.arg("plain"));
     log_d("POST /api/v1/config response: '%s'", content.c_str());
 
     if (flag || WiFi.isConnected() != true) {
