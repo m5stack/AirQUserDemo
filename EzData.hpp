@@ -22,7 +22,7 @@ public:
 
     ~EzData();
 
-    void setDeviceToken(const String dev_token);
+    void setDeviceToken(const String &dev_token);
 
     template<typename T, typename std::enable_if<std::is_integral<T>::value, T> :: type* = nullptr>
     bool set(T value);

@@ -3,7 +3,7 @@
 #include <Wire.h>
 #include <LittleFS.h>
 #include <M5Unified.h>
-#include <lgfx/v1/panel/Panel_GDEW0154M09.hpp>
+#include <lgfx/v1/panel/Panel_GDEW0154D67.hpp>
 #include <WiFi.h>
 #include <sntp.h>
 #include <freertos/queue.h>
@@ -25,7 +25,7 @@
 
 
 class AirQ_GFX : public lgfx::LGFX_Device {
-    lgfx::Panel_GDEW0154M09 _panel_instance;
+    lgfx::Panel_GDEW0154D67 _panel_instance;
     lgfx::Bus_SPI           _spi_bus_instance;
 
    public:
@@ -45,7 +45,7 @@ class AirQ_GFX : public lgfx::LGFX_Device {
         {
             auto cfg = _panel_instance.config();
 
-            cfg.invert       = false;
+            cfg.invert       = true;
             cfg.pin_cs       = EPD_CS;
             cfg.pin_rst      = EPD_RST;
             cfg.pin_busy     = EPD_BUSY;
@@ -979,7 +979,7 @@ void wifiAPSTASetup() {
 
     log_i("Waiting for WiFi");
 
-    mac = WiFi.softAPmacAddress();
+    mac = WiFi.macAddress();
     mac.toUpperCase();
     mac.replace(":", "");
     apSSID = "AirQ-" + mac.substring(6, 12);

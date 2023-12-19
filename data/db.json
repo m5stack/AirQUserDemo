@@ -18,6 +18,7 @@
         },
         "buzzer": {
             "mute": true
-        }
+        },
+        "nickname": "AirQAirQ"
     }
 }

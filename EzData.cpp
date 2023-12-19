@@ -41,8 +41,9 @@ EzData::EzData(const String data_token) {
 EzData::~EzData() {}
 
 
-void EzData::setDeviceToken(const String dev_token) {
+void EzData::setDeviceToken(const String &dev_token) {
     _device_token = dev_token;
+    log_d("%s", _device_token.c_str());
 }
 
 template<typename T, typename std::enable_if<std::is_integral<T>::value, T> :: type* = nullptr>
@@ -233,7 +234,9 @@ bool registeredDevice(const String &mac, String &loginName, String &password, St
     http.addHeader("Content-Type", "application/json");
     int httpCode = http.POST((uint8_t *)buf, strlen(buf));
     if (httpCode == HTTP_CODE_OK) {
-        DeserializationError error = deserializeJson(doc, http.getString());
+        String rsp = http.getString();
+        log_d("rsp: %s", rsp.c_str());
+        DeserializationError error = deserializeJson(doc, rsp);
         ret = false;
         if (error) {
             log_e("deserializeJson() failed: %s", error.c_str());
@@ -269,7 +272,9 @@ bool login(const String &loginName, const String &password, String &deviceToken)
     http.addHeader("Content-Type", "application/json");
     int httpCode = http.POST((uint8_t *)buf, strlen(buf));
     if (httpCode == HTTP_CODE_OK) {
-        DeserializationError error = deserializeJson(doc, http.getString());
+        String rsp = http.getString();
+        log_d("rsp: %s", rsp.c_str());
+        DeserializationError error = deserializeJson(doc, rsp);
         ret = false;
         if (error) {
             log_e("deserializeJson() failed: %s", error.c_str());
