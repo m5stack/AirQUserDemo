@@ -130,7 +130,7 @@ static void getWiFiStatus() {
         return;
     }
 
-    String mac = WiFi.softAPmacAddress();
+    String mac = WiFi.macAddress();
     if (WiFi.status() == WL_CONNECTED) {
         cJSON_AddBoolToObject(rspObject, "status", true);
     } else {
