@@ -1,4 +1,4 @@
-#include "sensor.hpp"
+#include "Sensor.hpp"
 
 #include "config.h"
 #include <esp_adc_cal.h>
