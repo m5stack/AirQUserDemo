@@ -24,6 +24,9 @@
 #include "AppWeb.hpp"
 
 
+#define USB_TIME_REFRESH 30 // in seconds (refresh with USB cable)
+
+
 class AirQ_GFX : public lgfx::LGFX_Device {
     lgfx::Panel_GDEW0154D67 _panel_instance;
     lgfx::Bus_SPI           _spi_bus_instance;
@@ -1267,11 +1270,12 @@ void shutdown() {
     delay(10);
     digitalWrite(POWER_HOLD, LOW);
 
-    lcd.wakeup();
-    lcd.waitDisplay();
-    preferences.begin("airq", false);
-    log_i("USB powered, continue to operate");
-    wakeupType = E_WAKEUP_TYPE_USB;
+    // poweroff and wakeup simulation
+    log_i("USB powered, simulating shutdown for %i secs",USB_TIME_REFRESH);
+    delay(USB_TIME_REFRESH*1000);
+    delay(10);
+    log_i("restarting..");
+    ESP.restart();
 }
 
 
