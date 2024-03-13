@@ -1275,12 +1275,6 @@ void shutdown() {
     delay(10);
     digitalWrite(POWER_HOLD, LOW);
 
-    // poweroff and wakeup simulation
-    // log_i("USB powered, simulating shutdown for %i secs",db.rtc.sleepInterval);
-    // delay(db.rtc.sleepInterval*1000);
-    // delay(10);
-    // log_i("restarting..");
-    // ESP.restart();
     lcd.wakeup();
     lcd.waitDisplay();
     preferences.begin("airq", false);
