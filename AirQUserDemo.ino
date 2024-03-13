@@ -45,7 +45,7 @@ class AirQ_GFX : public lgfx::LGFX_Device {
         {
             auto cfg = _panel_instance.config();
 
-            cfg.invert       = true;
+            cfg.invert       = false;
             cfg.pin_cs       = EPD_CS;
             cfg.pin_rst      = EPD_RST;
             cfg.pin_busy     = EPD_BUSY;
@@ -198,9 +198,15 @@ void setup() {
     pinMode(POWER_HOLD, OUTPUT);
     digitalWrite(POWER_HOLD, HIGH);
 
-    log_i("Turn on SEN55 power");
-    pinMode(SEN55_POWER_EN, OUTPUT);
-    digitalWrite(SEN55_POWER_EN, LOW);
+    esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+    if (wakeup_reason == ESP_SLEEP_WAKEUP_TIMER) {
+        // gpio_hold_dis((gpio_num_t)SEN55_POWER_EN);
+        // gpio_deep_sleep_hold_dis();
+    } else {
+        log_i("Turn on SEN55 power");
+        pinMode(SEN55_POWER_EN, OUTPUT);
+        digitalWrite(SEN55_POWER_EN, LOW);
+    }
 
     log_i("LittleFS init");
     if (FORMAT_FILESYSTEM) {
@@ -276,24 +282,26 @@ void setup() {
     /** Init SEN55 */
     log_i("SEN55 sensor init");
     sen5x.begin(Wire);
-    error = sen5x.deviceReset();
-    if (error) {
-        errorToString(error, errorMessage, 256);
-        log_w("Error trying to execute deviceReset(): %s", errorMessage);
-    }
-    float tempOffset = 0.0;
-    error = sen5x.setTemperatureOffsetSimple(tempOffset);
-    if (error) {
-        errorToString(error, errorMessage, 256);
-        log_w("Error trying to execute setTemperatureOffsetSimple(): %s", errorMessage);
-    } else {
-        log_i("Temperature Offset set to %f deg. Celsius (SEN54/SEN55 only)", tempOffset);
-    }
-    /** Start Measurement */
-    error = sen5x.startMeasurement();
-    if (error) {
-        errorToString(error, errorMessage, 256);
-        log_w("Error trying to execute startMeasurement(): %s", errorMessage);
+    if (wakeup_reason != ESP_SLEEP_WAKEUP_TIMER) {
+        error = sen5x.deviceReset();
+        if (error) {
+            errorToString(error, errorMessage, 256);
+            log_w("Error trying to execute deviceReset(): %s", errorMessage);
+        }
+        float tempOffset = 0.0;
+        error = sen5x.setTemperatureOffsetSimple(tempOffset);
+        if (error) {
+            errorToString(error, errorMessage, 256);
+            log_w("Error trying to execute setTemperatureOffsetSimple(): %s", errorMessage);
+        } else {
+            log_i("Temperature Offset set to %f deg. Celsius (SEN54/SEN55 only)", tempOffset);
+        }
+        /** Start Measurement */
+        error = sen5x.startMeasurement();
+        if (error) {
+            errorToString(error, errorMessage, 256);
+            log_w("Error trying to execute startMeasurement(): %s", errorMessage);
+        }
     }
 
     /** fixme: 超时处理 */
@@ -1268,11 +1276,22 @@ void shutdown() {
     digitalWrite(POWER_HOLD, LOW);
 
     // poweroff and wakeup simulation
-    log_i("USB powered, simulating shutdown for %i secs",db.rtc.sleepInterval);
-    delay(db.rtc.sleepInterval*1000);
+    // log_i("USB powered, simulating shutdown for %i secs",db.rtc.sleepInterval);
+    // delay(db.rtc.sleepInterval*1000);
+    // delay(10);
+    // log_i("restarting..");
+    // ESP.restart();
+    lcd.wakeup();
+    lcd.waitDisplay();
+    preferences.begin("airq", false);
+    log_i("USB powered, continue to operate");
+    wakeupType = E_WAKEUP_TYPE_USB;
+    digitalWrite(POWER_HOLD, HIGH);
     delay(10);
-    log_i("restarting..");
-    ESP.restart();
+    gpio_hold_en((gpio_num_t)SEN55_POWER_EN);
+    gpio_deep_sleep_hold_en();
+    esp_sleep_enable_timer_wakeup(db.rtc.sleepInterval * 1000000);
+    esp_deep_sleep_start();
 }
 
 

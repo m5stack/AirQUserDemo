@@ -28,7 +28,7 @@
 #define EPD_RST  2
 #define EPD_BUSY 1
 
-#define APP_VERSION "0.1.0"
+#define APP_VERSION "0.1.1"
 
 #define FORMAT_FILESYSTEM false
 #define FILESYSTEM LittleFS
