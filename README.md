@@ -12,6 +12,11 @@
 1. upload firmware
 2. upload filesystem image
 
+## Tutorial
+
+- [Arduino IDE : Install ESP32 Filesystem Uploader](https://randomnerdtutorials.com/install-esp32-filesystem-uploader-arduino-ide/)
+- [Arduino IDE 2: Install ESP32 Filesystem Uploader](https://randomnerdtutorials.com/arduino-ide-2-install-esp32-littlefs/)
+
 ## Third-party libraries
 
 - [m5stack/M5GFX @ 0.1.9](https://github.com/m5stack/M5Unified/tree/0.1.9)
