@@ -23,6 +23,7 @@ public:
     ~EzData();
 
     void setDeviceToken(const String &dev_token);
+    void setServer(const String &server);
 
     template<typename T, typename std::enable_if<std::is_integral<T>::value, T> :: type* = nullptr>
     bool set(T value);
@@ -46,6 +47,7 @@ public:
     bool del();
 
 private:
+    String _server = "ezdata2.m5stack.com";
     bool _public = false;
     String _device_token = "";
     String _key = "";

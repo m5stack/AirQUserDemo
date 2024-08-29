@@ -5,6 +5,7 @@
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 
+String gServer = "ezdata2.m5stack.com";
 
 EzData::EzData(const char *dev_token, const char *key) {
     _device_token = dev_token;
@@ -44,6 +45,12 @@ EzData::~EzData() {}
 void EzData::setDeviceToken(const String &dev_token) {
     _device_token = dev_token;
     log_d("%s", _device_token.c_str());
+}
+
+
+void EzData::setServer(const String &server) {
+    _server = server;
+    gServer = server;
 }
 
 template<typename T, typename std::enable_if<std::is_integral<T>::value, T> :: type* = nullptr>
@@ -131,10 +138,11 @@ bool EzData::set(const char *value, size_t len) {
     return ret;
 }
 
+
 bool EzData::_set(uint8_t *payload, size_t size) {
     bool ret = false;
     HTTPClient http;
-    String url = String("http://ezdata2.m5stack.com/api/v2/") + _device_token + String("/add");
+    String url = String("http://") + _server + String("/api/v2/") + _device_token + String("/add");
     DynamicJsonDocument doc(1024);
 
     http.begin(url);
@@ -174,7 +182,7 @@ bool EzData::_get(T &retValue) {
     bool ret = false;
     HTTPClient http;
     DynamicJsonDocument doc(1024);
-    String url = String("http://ezdata2.m5stack.com/api/v2/")
+    String url = String("http://") + _server + String("/api/v2/")
                 + _device_token
                 + String("/dataByKey/")
                 + _key;
@@ -202,7 +210,7 @@ out:
 bool EzData::del() {
     bool ret = false;
     HTTPClient http;
-    String url = String("http://ezdata2.m5stack.com/api/v2/")
+    String url = String("http://") + _server + String("/api/v2/")
                 + _device_token
                 + String("/delete/")
                 + _key;
@@ -223,7 +231,7 @@ bool registeredDevice(const String &mac, String &loginName, String &password, St
     bool ret = false;
     HTTPClient http;
     char buf[256] = { 0 };
-    String url = "http://ezdata2.m5stack.com/api/v2/AirQ/registered";
+    String url = String("http://") + gServer + String("/api/v2/") + String("AirQ/registered");
     DynamicJsonDocument doc(1024);
 
     snprintf(buf, sizeof(buf) - 1, "{\"mac\": \"%s\"}", mac.c_str());
@@ -263,7 +271,7 @@ bool login(const String &loginName, const String &password, String &deviceToken)
     bool ret = false;
     HTTPClient http;
     char buf[256] = { 0 };
-    String url = "http://ezdata2.m5stack.com/api/v2/AirQ/doLogin";
+    String url = String("http://") + gServer + String("/api/v2/") + String("AirQ/doLogin");
     DynamicJsonDocument doc(1024);
 
     snprintf(buf, sizeof(buf) - 1, "{\"loginName\": \"%s\", \"password\": \"%s\"}", loginName.c_str(), password.c_str());

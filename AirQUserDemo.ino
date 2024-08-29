@@ -155,6 +155,8 @@ EzData ezdataHanlder(db.ezdata2.devToken, "raw");
 bool ezdataStatus = false;
 EzDataState_t ezdataState = E_EZDATA_STATE_INIT;
 
+String ezdataMonitorServer = "https://airq.m5stack.com";
+
 Preferences preferences;
 uint32_t successCounter = 0;
 uint32_t failCounter = 0;
@@ -217,6 +219,11 @@ void setup() {
     db.loadFromFile();
     db.dump();
 
+    if (db.isFactoryTestMode) {
+        ezdataHanlder.setServer("192.168.2.46:8299");
+        ezdataMonitorServer = "http://192.168.2.46:5173";
+    }
+
     /** Start Beep */
     if (db.buzzer.onoff == true) {
         ledcAttachPin(BUZZER_PIN, 0);
@@ -232,7 +239,7 @@ void setup() {
 
     log_i("Screen init");
     lcd.begin();
-    lcd.setEpdMode(epd_mode_t::epd_text);
+    lcd.setEpdMode(epd_mode_t::epd_fastest);
     // lcd.sleep();
 
     statusView.begin();
@@ -539,7 +546,7 @@ void ezdataApp(ButtonEvent_t *buttonEvent) {
     static bool refresh = true;
     static String devToken = db.ezdata2.devToken;
 
-    String url = "https://airq.m5stack.com/" + mac;
+    String url = ezdataMonitorServer + String("/") + mac;
 
     if (buttonEvent->id == E_BUTTON_A) {
         runMode = E_RUN_MODE_MAIN;

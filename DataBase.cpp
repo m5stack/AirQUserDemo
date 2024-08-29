@@ -104,6 +104,7 @@ void DataBase::dump() {
     log_d("    onoff: %d", buzzer.onoff);
 
     log_d("  nickname: %s", nickname.c_str());
+    log_d("  isFactoryTestMode: %d", isFactoryTestMode);
 }
 
 
@@ -166,6 +167,12 @@ void DataBase::loadFromFile(void) {
     cJSON *nicknameObject = cJSON_GetObjectItem(configObject, "nickname");
     if (nicknameObject) {
         nickname = String(nicknameObject->valuestring);
+    }
+
+    // Test code, please ignore it.
+    cJSON *testObject = cJSON_GetObjectItem(rootObject, "test");
+    if (testObject) {
+        isFactoryTestMode = cJSON_IsTrue(testObject);
     }
 
     cJSON_Delete(rootObject);
