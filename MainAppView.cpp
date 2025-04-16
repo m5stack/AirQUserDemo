@@ -1,6 +1,5 @@
 #include "MainAppView.hpp"
 
-StatusView::StatusView() {}
 
 
 StatusView::StatusView(LGFX_Device *lcd, M5Canvas *canvas) {
@@ -463,7 +462,7 @@ void StatusView::initSEN55()
 
     tempX = _sen55BaseCursorX + tempW - 2;
     _canvas->drawRightString("n/a", tempX, tempY, _sen55OptionFont);
-    _vocCanvasX = tempX - _canvas->textWidth("00000", _sen55OptionFont);
+    _vocCanvasX = tempX - _canvas->textWidth("000000", _sen55OptionFont);
     _vocCanvasY = tempY;
 
     // nox
@@ -472,8 +471,8 @@ void StatusView::initSEN55()
     _canvas->drawString("NOX", tempX, tempY, _sen55OptionFont);
 
     tempX = _sen55BaseCursorX + tempW - 2;
-    _canvas->drawRightString("n/a", tempX, tempY, _sen55OptionFont);
-    _noxCanvasX = tempX - _canvas->textWidth("00000", _sen55OptionFont);
+    _canvas->drawRightString("560.00", tempX, tempY, _sen55OptionFont);
+    _noxCanvasX = tempX - _canvas->textWidth("000000", _sen55OptionFont);
     _noxCanvasY = tempY;
 
     _pm1p0Canvas = new M5Canvas(_canvas);
@@ -526,7 +525,7 @@ void StatusView::initSEN55()
 
     _vocCanvas = new M5Canvas(_canvas);
     _vocCanvas->createSprite(
-        _vocCanvas->textWidth("00000", _sen55OptionFont),
+        _vocCanvas->textWidth("000000", _sen55OptionFont),
         _vocCanvas->fontHeight(_sen55OptionFont)
     );
     _vocCanvas->setBaseColor(TFT_WHITE);
@@ -534,7 +533,7 @@ void StatusView::initSEN55()
 
     _noxCanvas = new M5Canvas(_canvas);
     _noxCanvas->createSprite(
-        _noxCanvas->textWidth("00000", _sen55OptionFont),
+        _noxCanvas->textWidth("000000", _sen55OptionFont),
         _noxCanvas->fontHeight(_sen55OptionFont)
     );
     _noxCanvas->setBaseColor(TFT_WHITE);
@@ -715,7 +714,7 @@ void StatusView::updateSEN55(
 
     memset(str, 0, sizeof(str));
     sprintf(str, "%.2f", vocIndex);
-    _vocCanvas->drawRightString(str, _pm1p0Canvas->width(), 0, _sen55OptionFont);
+    _vocCanvas->drawRightString(str, _vocCanvas->width(), 0, _sen55OptionFont);
     _vocCanvas->pushSprite(_vocCanvasX, _vocCanvasY);
 
     memset(str, 0, sizeof(str));

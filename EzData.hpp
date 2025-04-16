@@ -25,8 +25,7 @@ public:
     void setDeviceToken(const String &dev_token);
     void setServer(const String &server);
 
-    template<typename T, typename std::enable_if<std::is_integral<T>::value, T> :: type* = nullptr>
-    bool set(T value);
+    bool set(int value);
 
     bool set(const float value);
 

@@ -53,8 +53,8 @@ void EzData::setServer(const String &server) {
     gServer = server;
 }
 
-template<typename T, typename std::enable_if<std::is_integral<T>::value, T> :: type* = nullptr>
-bool EzData::set(T value) {
+
+bool EzData::set(int value) {
     if (_public) {
         return false;
     }

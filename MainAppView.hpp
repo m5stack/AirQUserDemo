@@ -6,7 +6,6 @@
 class StatusView
 {
 public:
-    StatusView();
     StatusView(LGFX_Device *lcd, M5Canvas *canvas);
     ~StatusView();
 

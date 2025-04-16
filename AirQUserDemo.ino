@@ -5,7 +5,7 @@
 #include <M5Unified.h>
 #include <lgfx/v1/panel/Panel_GDEW0154D67.hpp>
 #include <WiFi.h>
-#include <sntp.h>
+#include <esp_sntp.h>
 #include <freertos/queue.h>
 
 #include "I2C_BM8563.h"
@@ -220,8 +220,8 @@ void setup() {
     db.dump();
 
     if (db.isFactoryTestMode) {
-        ezdataHanlder.setServer("192.168.2.46:8299");
-        ezdataMonitorServer = "http://192.168.2.46:5173";
+        ezdataHanlder.setServer("192.168.20.236:8299");
+        ezdataMonitorServer = "http://192.168.20.236:5173";
     }
 
     /** Start Beep */
@@ -261,13 +261,16 @@ void setup() {
     wakeupType = getDeviceWakeupType();
 
     log_i("NTP init");
-    sntp_servermode_dhcp(1);
+    esp_sntp_servermode_dhcp(1);
+    String tz;
+    TZConvert(db.ntp.tz, tz);
     configTzTime(
-        db.ntp.tz.c_str(),
+        tz.c_str(),
         db.ntp.ntpServer0.c_str(),
         db.ntp.ntpServer1.c_str(),
         "pool.ntp.org"
     );
+    sntp_set_time_sync_notification_cb(timeavailable);
 
     log_i("SCD40 sensor init");
     char errorMessage[256];
@@ -329,10 +332,10 @@ void setup() {
 
     btnA.attachClick(btnAClickEvent);
     btnA.attachLongPressStart(btnALongPressStartEvent);
-    btnA.setPressTicks(5000);
+    btnA.setPressMs(5000);
     btnB.attachClick(btnBClickEvent);
     btnB.attachLongPressStart(btnBLongPressStartEvent);
-    btnB.setPressTicks(5000);
+    btnB.setPressMs(5000);
     // btnPower.attachClick(btnPowerClickEvent);
     buttonEventQueue = xQueueCreate(16, sizeof(ButtonEvent_t));
 
@@ -1016,22 +1019,9 @@ void wifiStartAP() {
 }
 
 
-void onWiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
-    log_i("WiFi connected");
-    log_i("IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
-
-    db.pskStatus = true;
-    db.factoryState = false;
-    db.saveToFile();
-
-    sntp_servermode_dhcp(1);
-    configTzTime(
-        db.ntp.tz.c_str(),
-        db.ntp.ntpServer0.c_str(),
-        db.ntp.ntpServer1.c_str(),
-        "pool.ntp.org"
-    );
-
+// Callback function (gets called when time adjusts via NTP)
+void timeavailable(struct timeval *t) {
+    log_i("Got time adjustment from NTP!");
     struct tm timeinfo;
     if (getLocalTime(&timeinfo, 1000)) {
         I2C_BM8563_TimeTypeDef I2C_BM8563_TimeStruct;
@@ -1046,7 +1036,27 @@ void onWiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
         I2C_BM8563_DateStruct.date = timeinfo.tm_mday;
         I2C_BM8563_DateStruct.weekDay = timeinfo.tm_wday;
         bm8563.setDate(&I2C_BM8563_DateStruct);
+        Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
     }
+}
+
+void onWiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info) {
+    log_i("WiFi connected");
+    log_i("IP address: %s", IPAddress(info.got_ip.ip_info.ip.addr).toString().c_str());
+
+    db.pskStatus = true;
+    db.factoryState = false;
+    db.saveToFile();
+
+    esp_sntp_servermode_dhcp(1);
+    String tz;
+    TZConvert(db.ntp.tz, tz);
+    configTzTime(
+        tz.c_str(),
+        db.ntp.ntpServer0.c_str(),
+        db.ntp.ntpServer1.c_str(),
+        "pool.ntp.org"
+    );
 
     NetworkStatusMsgEvent_t networkStatusMsgEvent;
     memset(&networkStatusMsgEvent, 0, sizeof(NetworkStatusMsgEvent_t));
@@ -1232,8 +1242,10 @@ time_t bm8563ToTime(I2C_BM8563 &bm8563) {
         "pool.ntp.org"
     );
     time_t time = mktime(&tm);
+    String tz;
+    TZConvert(db.ntp.tz, tz);
     configTzTime(
-        db.ntp.tz.c_str(),
+        tz.c_str(),
         db.ntp.ntpServer0.c_str(),
         db.ntp.ntpServer1.c_str(),
         "pool.ntp.org"
@@ -1385,4 +1397,15 @@ void _ctime(uint32_t seconds, String &text) {
     if (s != 0) {
         text += String(s) + "S";
     }
+}
+
+
+void TZConvert(const String &old, String &out) {
+    out = old;
+    if (out.indexOf("-") != -1) {
+        out.replace("-", "+");
+    } else if (out.indexOf("+") != -1) {
+        out.replace("+", "-");
+    }
+    log_i("tz %s to %s", old.c_str(), out.c_str());
 }

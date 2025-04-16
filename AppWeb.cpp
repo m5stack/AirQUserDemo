@@ -439,8 +439,11 @@ static void postConfig() {
             db.ntp.ntpServer0 = String(ntpServer0Object->valuestring);
             db.ntp.ntpServer1 = String(ntpServer1Object->valuestring);
             db.ntp.tz = String(tzObject->valuestring);
+            String tz;
+            extern void TZConvert(const String &old, String &out);
+            TZConvert(db.ntp.tz, tz);
             configTzTime(
-                db.ntp.tz.c_str(),
+                tz.c_str(),
                 db.ntp.ntpServer0.c_str(),
                 db.ntp.ntpServer1.c_str(),
                 "pool.ntp.org"

@@ -69,6 +69,8 @@ void DataBase::saveToFile() {
 
     cJSON_AddStringToObject(configObject, "nickname", nickname.c_str());
 
+    cJSON_AddBoolToObject(rootObject, "test", isFactoryTestMode);
+
     configfile = FILESYSTEM.open("/db.json", FILE_WRITE);
     str = cJSON_Print(rootObject);
     configfile.write((const uint8_t *)str, strlen(str));
