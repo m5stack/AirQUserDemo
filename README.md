@@ -46,6 +46,6 @@
 
 5. Wait for the installation of third-party dependent libraries to complete
 
-6. Click (→) to upload firmware
+6. Click `→` to upload firmware
 
-7. Click (Upload Filesystem Image) to upload firmware
+7. Click `Upload Filesystem Image` or enter `pio run -t uploadfs` in the PlatformIO terminal to upload filesystem firmware
