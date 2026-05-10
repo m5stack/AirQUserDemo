@@ -59,6 +59,15 @@ const data = ref({
     },
     "buzzer": {
       "mute": true
+    },
+    "mqtt": {
+      "host": "",
+      "topic": "",
+      "login": "",
+      "password": ""
+    },
+    "ezdata2": {
+      "enabled": false
     }
   }
 })
@@ -92,6 +101,7 @@ const typePwd = computed(() => {
 
 onMounted(() => {
   getWlan()
+  getConfig()
   console.log(connectTimeOut)
 })
 
@@ -116,6 +126,29 @@ const getWlan = () => {
     })
     .then(res => {
       wifilist.value = res.ap_list
+    })
+    .catch(err => {
+      console.log(err)
+    })
+}
+
+const getConfig = () => {
+  fetch('/api/v1/config')
+    .then(res => {
+      if (res.status === 200) {
+        return res.json()
+      } else {
+        throw new Error()
+      }
+    })
+    .then(res => {
+      if (res.config) {
+        data.value.config.rtc = res.config.rtc
+        data.value.config.ntp = res.config.ntp
+        data.value.config.buzzer = res.config.buzzer
+        data.value.config.mqtt = res.config.mqtt
+        data.value.config.ezdata2 = res.config.ezdata2
+      }
     })
     .catch(err => {
       console.log(err)
@@ -413,6 +446,33 @@ const handleToggleDropdown = () => {
                 {{ state.name }}
               </option>
             </select>
+          </div>
+        </div>
+      </div>
+      <div class="rounded-lg mx-auto sm:max-w-sm bg-slate-100 my-4">
+        <div class="bg-slate-300 rounded-t-lg p-3 sm:px-6 text-xl sm:font-semibold text-gray-600">
+          MQTT Config
+        </div>
+        <div class="p-4 text-gray-600">
+          <div>
+            <label for="mqtt_host" class="inline-block w-48 mr-2">Host</label>
+            <input type="text" id="mqtt_host" class="border rounded p-1 w-full" v-model="data.config.mqtt.host">
+          </div>
+          <div class="my-2">
+            <label for="mqtt_topic" class="inline-block w-48 mr-2">Topic</label>
+            <input type="text" id="mqtt_topic" class="border rounded p-1 w-full" v-model="data.config.mqtt.topic">
+          </div>
+          <div class="my-2">
+            <label for="mqtt_login" class="inline-block w-48 mr-2">Login</label>
+            <input type="text" id="mqtt_login" class="border rounded p-1 w-full" v-model="data.config.mqtt.login">
+          </div>
+          <div class="my-2">
+            <label for="mqtt_password" class="inline-block w-48 mr-2">Password</label>
+            <input type="password" id="mqtt_password" class="border rounded p-1 w-full" v-model="data.config.mqtt.password">
+          </div>
+          <div class="my-2 flex items-center">
+            <input type="checkbox" id="ezdata_enabled" class="checkbox checkbox-xs mr-2" v-model="data.config.ezdata2.enabled" />
+            <label for="ezdata_enabled" class="text-sm text-gray-600">Use EzData2</label>
           </div>
         </div>
       </div>

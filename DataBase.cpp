@@ -9,6 +9,7 @@ void DataBase::saveToFile() {
     cJSON *rootObject = NULL;
     cJSON *configObject = NULL;
     cJSON *wifiObject = NULL;
+    cJSON *mqttObject = NULL;
     cJSON *rtcObject = NULL;
     cJSON *ntpObject = NULL;
     cJSON *ezdataObject = NULL;
@@ -37,6 +38,16 @@ void DataBase::saveToFile() {
     cJSON_AddStringToObject(wifiObject, "ssid", wifi.ssid.c_str());
     cJSON_AddStringToObject(wifiObject, "password", wifi.password.c_str());
 
+    mqttObject = cJSON_CreateObject();
+    if (mqttObject == NULL) {
+        goto OUT;
+    }
+    cJSON_AddItemToObject(configObject, "mqtt", mqttObject);
+    cJSON_AddStringToObject(mqttObject, "login", mqtt.login.c_str());
+    cJSON_AddStringToObject(mqttObject, "password", mqtt.password.c_str());
+    cJSON_AddStringToObject(mqttObject, "host", mqtt.host.c_str());
+    cJSON_AddStringToObject(mqttObject, "topic", mqtt.topic.c_str());
+
     rtcObject = cJSON_CreateObject();
     if (rtcObject == NULL) {
         goto OUT;
@@ -59,6 +70,7 @@ void DataBase::saveToFile() {
     }
     cJSON_AddItemToObject(configObject, "ezdata2", ezdataObject);
     cJSON_AddStringToObject(ezdataObject, "dev_token", ezdata2.devToken.c_str());
+    cJSON_AddBoolToObject(ezdataObject, "enabled", ezdata2.enabled);
 
     buzzerObject = cJSON_CreateObject();
     if (buzzerObject == NULL) {
@@ -91,6 +103,12 @@ void DataBase::dump() {
     log_d("    ssid: %s", wifi.ssid.c_str());
     log_d("    password: %s", wifi.password.c_str());
 
+    log_d("  mqtt:");
+    log_d("    login: %s", mqtt.login.c_str());
+    log_d("    password: %s", mqtt.password.c_str());
+    log_d("    host: %s", mqtt.host.c_str());
+    log_d("    topic: %s", mqtt.topic.c_str());
+
     log_d("  rtc:");
     log_d("    sleep_interval: %d", rtc.sleepInterval);
 
@@ -101,6 +119,7 @@ void DataBase::dump() {
 
     log_d("  ezdata2:");
     log_d("    dev_token: %s", ezdata2.devToken.c_str());
+    log_d("    enabled: %d", ezdata2.enabled);
 
     log_d("  buzzer:");
     log_d("    onoff: %d", buzzer.onoff);
@@ -140,6 +159,18 @@ void DataBase::loadFromFile(void) {
     wifi.ssid = String(ssidObject->valuestring);
     wifi.password = String(pskObject->valuestring);
 
+    cJSON *mqttObject = cJSON_GetObjectItem(configObject, "mqtt");
+    if (mqttObject) {
+        cJSON *loginObject = cJSON_GetObjectItem(mqttObject, "login");
+        cJSON *passObject = cJSON_GetObjectItem(mqttObject, "password");
+        cJSON *hostObject = cJSON_GetObjectItem(mqttObject, "host");
+        cJSON *topicObject = cJSON_GetObjectItem(mqttObject, "topic");
+        if (loginObject) mqtt.login = String(loginObject->valuestring);
+        if (passObject) mqtt.password = String(passObject->valuestring);
+        if (hostObject) mqtt.host = String(hostObject->valuestring);
+        if (topicObject) mqtt.topic = String(topicObject->valuestring);
+    }
+
     cJSON *factoryStateObject = cJSON_GetObjectItem(configObject, "factory_state");
     factoryState = cJSON_IsTrue(factoryStateObject);
 
@@ -156,11 +187,15 @@ void DataBase::loadFromFile(void) {
     ntp.tz = String(tzObject->valuestring);
 
     cJSON *ezdataObject = cJSON_GetObjectItem(configObject, "ezdata2");
-    cJSON *tokenObject = cJSON_GetObjectItem(ezdataObject, "dev_token");
-    ezdata2.devToken = String(tokenObject->valuestring);
+    if (ezdataObject) {
+        cJSON *tokenObject = cJSON_GetObjectItem(ezdataObject, "dev_token");
+        ezdata2.devToken = String(tokenObject->valuestring);
+        cJSON *enabledObject = cJSON_GetObjectItem(ezdataObject, "enabled");
+        ezdata2.enabled = cJSON_IsTrue(enabledObject);
+    }
 
     cJSON *buzzerObject = cJSON_GetObjectItem(configObject, "buzzer");
-    if (cJSON_IsTrue(cJSON_GetObjectItem(buzzerObject, "mute"))) {
+    if (buzzerObject && cJSON_IsTrue(cJSON_GetObjectItem(buzzerObject, "mute"))) {
         buzzer.onoff = true;
     } else {
         buzzer.onoff = false;
