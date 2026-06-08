@@ -27,9 +27,16 @@ public:
         String tz;
     } ntp;
     struct {
+        String host;
+        String topic;
+        String login;
+        String password;
+    } mqtt;
+    struct {
         String devToken;
         String loginName;
         String password;
+        bool enabled;
     } ezdata2;
     struct {
         bool onoff;

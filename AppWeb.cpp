@@ -7,6 +7,7 @@
 
 #include <SensirionI2CScd4x.h>
 #include <SensirionI2CSen5x.h>
+#include <PubSubClient.h>
 
 #include "config.h"
 #include "DataBase.hpp"
@@ -17,6 +18,7 @@ bool webServerState = false;
 
 extern SensirionI2CScd4x scd4x;
 extern SensirionI2CSen5x sen5x;
+extern PubSubClient mqttClient;
 
 static void postWiFiConnect();
 static void getWiFiStatus();
@@ -451,10 +453,34 @@ static void postConfig() {
         }
     }
 
+    cJSON *mqttObject = cJSON_GetObjectItem(configObject, "mqtt");
+    if (mqttObject) {
+        cJSON *mqttHostObject = cJSON_GetObjectItem(mqttObject, "host");
+        cJSON *mqttTopicObject = cJSON_GetObjectItem(mqttObject, "topic");
+        cJSON *mqttLoginObject = cJSON_GetObjectItem(mqttObject, "login");
+        cJSON *mqttPasswordObject = cJSON_GetObjectItem(mqttObject, "password");
+        if (String(mqttHostObject->valuestring) != db.mqtt.host
+            || String(mqttTopicObject->valuestring) != db.mqtt.topic
+            || String(mqttLoginObject->valuestring) != db.mqtt.login
+            || String(mqttPasswordObject->valuestring) != db.mqtt.password
+        ) {
+            db.mqtt.host = String(mqttHostObject->valuestring);
+            db.mqtt.topic = String(mqttTopicObject->valuestring);
+            db.mqtt.login = String(mqttLoginObject->valuestring);
+            db.mqtt.password = String(mqttPasswordObject->valuestring);
+            mqttClient.setServer(db.mqtt.host.c_str(), 1883);
+            flag = true;
+        }
+    }
+
     ezdataObject = cJSON_GetObjectItem(configObject, "ezdata2");
     if (ezdataObject) {
         cJSON *tokenObject = cJSON_GetObjectItem(ezdataObject, "dev_token");
-        db.ezdata2.devToken = tokenObject->valuestring;
+        if (tokenObject) {
+            db.ezdata2.devToken = tokenObject->valuestring;
+        }
+        cJSON *enabledObject = cJSON_GetObjectItem(ezdataObject, "enabled");
+        db.ezdata2.enabled = cJSON_IsTrue(enabledObject);
         db.factoryState = false;
     }
 

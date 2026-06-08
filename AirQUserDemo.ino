@@ -22,7 +22,10 @@
 #include "MainAppView.hpp"
 #include "Sensor.hpp"
 #include "AppWeb.hpp"
+#include <PubSubClient.h>
 
+WiFiClient wifiClient;
+PubSubClient mqttClient(wifiClient);
 
 class AirQ_GFX : public lgfx::LGFX_Device {
     lgfx::Panel_GDEW0154D67 _panel_instance;
@@ -524,7 +527,34 @@ void mainApp(ButtonEvent_t *buttonEvent) {
     if (WiFi.isConnected() && runingEzdataUpload && ezdataUploadCount-- > 0) {
         ezdataHanlder.setDeviceToken(db.ezdata2.devToken);
         BUTTON_TONE();
-        if (uploadSensorRawData(ezdataHanlder)) {
+        bool ok = false;
+
+        if(db.ezdata2.enabled) {
+            ok = uploadSensorRawData(ezdataHanlder);
+        }
+
+        if(db.mqtt.host != "") {
+            // Инициализация MQTT клиента         
+            IPAddress serverIP;                                                                                                                                                                                                                            
+            if (serverIP.fromString(db.mqtt.host.c_str())) {
+                mqttClient.setServer(serverIP, 1883); 
+                log_i("using ip addr from host %s", db.mqtt.host.c_str());
+            } else {
+                mqttClient.setServer(db.mqtt.host.c_str(), 1883);    
+                log_i("using host %s as domain", db.mqtt.host.c_str());                                                                                                                                                                                                                  
+            }
+            mqttClient.setBufferSize(1024);
+            mqttClient.setCallback(mqttCallback); 
+            if (!mqttClient.connect(db.nickname.c_str(), db.mqtt.login.c_str(), db.mqtt.password.c_str())) {
+                log_i("cannot connect to mqtt with %s: %s (result=%d)", db.mqtt.host.c_str(), db.mqtt.login.c_str(), mqttClient.state());
+            }
+
+            if (uploadSensorMqttData(mqttClient, db.mqtt.topic.c_str())) {
+                ok = true;
+            }
+        }
+
+        if (ok) {
             successCounter += 1;
             preferences.putUInt("OK", successCounter);
             String msg = "OK:" + String(successCounter);
@@ -975,6 +1005,14 @@ void listDirectory(fs::FS &fs, const char * dirname, uint8_t levels) {
 }
 
 
+// Callback при получении сообщения                                                                                                                                                                                                                                        
+void mqttCallback(char* topic, byte* payload, unsigned int length) {                                                                                                                                                                                                           
+    char *message = (char *)malloc(length);
+    snprintf(message, length, "%s", payload);
+    log_i("MQTT debug topic=%s: %s", topic, message);  
+    free(message);                                                                                                                                                                                                                                                    
+}
+
 void wifiAPSTASetup() {
     log_i("WiFi setup...");
 
@@ -1003,7 +1041,6 @@ void wifiAPSTASetup() {
     apSSID = "AirQ-" + mac.substring(6, 12);
     log_i("softAP MAC: %s", mac.c_str());
 }
-
 
 void wifiStartAP() {
     WiFi.softAPdisconnect();
@@ -1185,6 +1222,69 @@ bool uploadSensorRawData(EzData &ezdataHanlder) {
 OUT:
     free(buf);
     cJSON_Delete(rspObject);
+OUT1:
+    return ret;
+}
+
+
+bool uploadSensorMqttData(PubSubClient &mqttClient, const char *topic) {
+    bool ret = false;
+    cJSON *rootObject = NULL;
+    cJSON *sen55Object = NULL;
+    cJSON *scd40Object = NULL;
+    cJSON *rtcObject = NULL;
+    cJSON *profileObject = NULL;
+    char *buf = NULL;
+    String data;
+
+    rootObject = cJSON_CreateObject();
+    if (rootObject == NULL) {
+        goto OUT1;
+    }
+
+    sen55Object = cJSON_CreateObject();
+    if (sen55Object == NULL) {
+        goto OUT;
+    }
+    cJSON_AddItemToObject(rootObject, "sen55", sen55Object);
+
+    scd40Object = cJSON_CreateObject();
+    if (scd40Object == NULL) {
+        goto OUT;
+    }
+    cJSON_AddItemToObject(rootObject, "scd40", scd40Object);
+
+    cJSON_AddNumberToObject(sen55Object, "pm1.0", sensor.sen55.massConcentrationPm1p0);
+    cJSON_AddNumberToObject(sen55Object, "pm2.5", sensor.sen55.massConcentrationPm2p5);
+    cJSON_AddNumberToObject(sen55Object, "pm4.0", sensor.sen55.massConcentrationPm4p0);
+    cJSON_AddNumberToObject(sen55Object, "pm10.0", sensor.sen55.massConcentrationPm10p0);
+    cJSON_AddNumberToObject(sen55Object, "humidity", sensor.sen55.ambientHumidity);
+    cJSON_AddNumberToObject(sen55Object, "temperature", sensor.sen55.ambientTemperature);
+    cJSON_AddNumberToObject(sen55Object, "voc", sensor.sen55.vocIndex);
+    cJSON_AddNumberToObject(sen55Object, "nox", sensor.sen55.noxIndex);
+
+    cJSON_AddNumberToObject(scd40Object, "co2", sensor.scd40.co2);
+    cJSON_AddNumberToObject(scd40Object, "humidity", sensor.scd40.humidity);
+    cJSON_AddNumberToObject(scd40Object, "temperature", sensor.scd40.temperature);
+
+    // cJSON_AddNumberToObject(rtcObject, "sleep_interval", db.rtc.sleepInterval);
+    // cJSON_AddStringToObject(profileObject, "nickname", db.nickname.c_str());
+
+    buf = cJSON_PrintUnformatted(rootObject);
+    data = buf;
+    // data.replace("\"", "\\\"");
+
+    if (mqttClient.connected() && mqttClient.publish(topic, data.c_str())) {
+        log_i("mqtt publish ok, topic: %s", topic);
+        ret = true;
+    } else {
+        log_w("mqtt publish failed, connected: %d", mqttClient.connected());
+        ret = false;
+    }
+
+OUT:
+    free(buf);
+    cJSON_Delete(rootObject);
 OUT1:
     return ret;
 }

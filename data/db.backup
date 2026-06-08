@@ -5,6 +5,12 @@
             "ssid": "",
             "password": ""
         },
+        "mqtt": {
+            "host": "",
+            "password": "",
+            "login": "",
+            "topic": ""
+        },
         "rtc": {
             "sleep_interval": 60
         },
@@ -14,7 +20,8 @@
             "tz": "GMT0"
         },
         "ezdata2": {
-            "dev_token": ""
+            "dev_token": "",
+            "enabled": false
         },
         "buzzer": {
             "mute": true
