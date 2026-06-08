@@ -1,4 +1,5 @@
 #include "EzData.hpp"
+#include "EzDataLog.hpp"
 
 #include <Arduino.h>
 #include <stdint.h>
@@ -112,7 +113,6 @@ bool EzData::set(const String value) {
         _key.c_str(),
         value.c_str()
     );
-    log_d("%s", buf);
     bool ret = _set((uint8_t *)buf, strlen(buf));
     free(buf);
     return ret;
@@ -131,10 +131,42 @@ bool EzData::set(const char *value, size_t len) {
         _key.c_str(),
         value
     );
-    
-    log_d("%s", buf);
     bool ret = _set((uint8_t *)buf, strlen(buf));
     free(buf);
+    return ret;
+}
+
+
+bool EzData::set(cJSON *value) {
+    if (_public || value == nullptr) {
+        return false;
+    }
+
+    cJSON *root = cJSON_CreateObject();
+    if (root == nullptr) {
+        return false;
+    }
+
+    cJSON_AddStringToObject(root, "dataType", "dict");
+    cJSON_AddStringToObject(root, "name", _key.c_str());
+    cJSON_AddStringToObject(root, "permissions", "1");
+
+    cJSON *valueCopy = cJSON_Duplicate(value, 1);
+    if (valueCopy == nullptr) {
+        cJSON_Delete(root);
+        return false;
+    }
+    cJSON_AddItemToObject(root, "value", valueCopy);
+
+    char *buf = cJSON_PrintUnformatted(root);
+    if (buf == nullptr) {
+        cJSON_Delete(root);
+        return false;
+    }
+
+    bool ret = _set((uint8_t *)buf, strlen(buf));
+    free(buf);
+    cJSON_Delete(root);
     return ret;
 }
 
@@ -147,9 +179,12 @@ bool EzData::_set(uint8_t *payload, size_t size) {
 
     http.begin(url);
     http.addHeader("Content-Type", "application/json");
+    EZDATA_LOG_HTTP_REQUEST("POST", url, "application/json", payload, size);
     int httpCode = http.POST((uint8_t *)payload, size);
     if (httpCode == HTTP_CODE_OK) {
-        DeserializationError error = deserializeJson(doc, http.getString());
+        String rsp = http.getString();
+        EZDATA_LOG_HTTP_RESPONSE(rsp);
+        DeserializationError error = deserializeJson(doc, rsp);
         ret = false;
         if (error) {
             log_e("deserializeJson() failed: %s", error.c_str());
@@ -188,10 +223,11 @@ bool EzData::_get(T &retValue) {
                 + _key;
 
     http.begin(url);
+    EZDATA_LOG_HTTP_REQUEST("GET", url);
     int httpCode = http.GET();
     if (httpCode == HTTP_CODE_OK) {
         String rsp = http.getString();
-        log_e("%s", rsp.c_str());
+        EZDATA_LOG_HTTP_RESPONSE(rsp);
         DeserializationError error = deserializeJson(doc, rsp);
         if (error) {
             log_e("deserializeJson() failed: %s", error.c_str());
@@ -236,14 +272,13 @@ bool registeredDevice(const String &mac, String &loginName, String &password, St
 
     snprintf(buf, sizeof(buf) - 1, "{\"mac\": \"%s\"}", mac.c_str());
 
-    log_d("%s", buf);
-
     http.begin(url);
     http.addHeader("Content-Type", "application/json");
+    EZDATA_LOG_HTTP_REQUEST("POST", url, "application/json", (uint8_t *)buf, strlen(buf));
     int httpCode = http.POST((uint8_t *)buf, strlen(buf));
     if (httpCode == HTTP_CODE_OK) {
         String rsp = http.getString();
-        log_d("rsp: %s", rsp.c_str());
+        EZDATA_LOG_HTTP_RESPONSE(rsp);
         DeserializationError error = deserializeJson(doc, rsp);
         ret = false;
         if (error) {
@@ -278,10 +313,11 @@ bool login(const String &loginName, const String &password, String &deviceToken)
 
     http.begin(url);
     http.addHeader("Content-Type", "application/json");
+    EZDATA_LOG_HTTP_REQUEST("POST", url, "application/json", (uint8_t *)buf, strlen(buf));
     int httpCode = http.POST((uint8_t *)buf, strlen(buf));
     if (httpCode == HTTP_CODE_OK) {
         String rsp = http.getString();
-        log_d("rsp: %s", rsp.c_str());
+        EZDATA_LOG_HTTP_RESPONSE(rsp);
         DeserializationError error = deserializeJson(doc, rsp);
         ret = false;
         if (error) {
@@ -292,7 +328,6 @@ bool login(const String &loginName, const String &password, String &deviceToken)
         if (code == 200) {
             ret = true;
             deviceToken = doc["data"]["deviceToken"].as<String>();
-            log_d("%s", deviceToken.c_str());
         } else {
             ret = false;
         }

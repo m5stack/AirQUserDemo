@@ -28,7 +28,7 @@
 #define EPD_RST  2
 #define EPD_BUSY 1
 
-#define APP_VERSION "0.1.2"
+#define APP_VERSION "0.2.0"
 
 #define FORMAT_FILESYSTEM false
 #define FILESYSTEM LittleFS
@@ -38,6 +38,14 @@
  * ezdata上传数据失败的重试次数
  */
 #define EZDATA_UPLOAD_RETRY_COUNT 3
+
+/* EzData HTTP request/response trace logging (0=off, 1=on)
+ *
+ * EzData HTTP 完整报文调试日志开关
+ */
+#ifndef EZDATA_HTTP_DEBUG
+#define EZDATA_HTTP_DEBUG 0
+#endif
 
 /* AirQ shutdown timeout in wake state, unit is seconds
  *

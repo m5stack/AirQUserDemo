@@ -1124,8 +1124,6 @@ bool uploadSensorRawData(EzData &ezdataHanlder) {
     cJSON *scd40Object = NULL;
     cJSON *rtcObject = NULL;
     cJSON *profileObject = NULL;
-    char *buf = NULL;
-    String data;
 
     rspObject = cJSON_CreateObject();
     if (rspObject == NULL) {
@@ -1172,10 +1170,7 @@ bool uploadSensorRawData(EzData &ezdataHanlder) {
     cJSON_AddNumberToObject(rtcObject, "sleep_interval", db.rtc.sleepInterval);
     cJSON_AddStringToObject(profileObject, "nickname", db.nickname.c_str());
 
-    buf = cJSON_PrintUnformatted(rspObject);
-    data = buf;
-    data.replace("\"", "\\\"");
-    if (ezdataHanlder.set(data)) {
+    if (ezdataHanlder.set(rspObject)) {
         log_i("ok");
         ret = true;
     } else {
@@ -1183,7 +1178,6 @@ bool uploadSensorRawData(EzData &ezdataHanlder) {
         ret = false;
     }
 OUT:
-    free(buf);
     cJSON_Delete(rspObject);
 OUT1:
     return ret;
