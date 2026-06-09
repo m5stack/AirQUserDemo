@@ -1,5 +1,9 @@
 # M5STACK AirQ User Demo
 
+## Documentation
+
+- [EZDATA `raw` Data Format Change](./AboutEzdataRawData.md) (v0.1.2 → v0.2.0)
+
 ## Supported framework
 
 - Arduino IDE
@@ -12,8 +16,8 @@
 
 2. Install the following dependent libraries:
 
-    - [m5stack/M5GFX @ 0.1.16](https://github.com/m5stack/M5GFX/tree/0.1.16)
-    - [m5stack/M5Unified @ 0.1.16](https://github.com/m5stack/M5Unified/tree/0.1.16)
+    - [m5stack/M5GFX @ 0.1.17](https://github.com/m5stack/M5GFX/tree/0.1.16)
+    - [m5stack/M5Unified @ 0.1.17](https://github.com/m5stack/M5Unified/tree/0.1.16)
     - [Sensirion/Sensirion Core 0.7.1](https://github.com/Sensirion/arduino-core/tree/0.7.1)
     - [sensirion/Sensirion I2C SEN5X 0.3.0](https://github.com/Sensirion/arduino-i2c-sen5x/tree/0.3.0)
     - [sensirion/Sensirion I2C SCD4x @ 0.4.0](https://github.com/Sensirion/arduino-i2c-scd4x/tree/0.4.0)

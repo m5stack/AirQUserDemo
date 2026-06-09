@@ -3,6 +3,7 @@
 
 #include <WString.h>
 #include <type_traits>
+#include <cJSON.h>
 
 
 class EzData
@@ -34,6 +35,8 @@ public:
     bool set(const String value);
 
     bool set(const char *value, size_t len);
+
+    bool set(cJSON *value);
 
     bool _set(uint8_t *payload, size_t size);
 
